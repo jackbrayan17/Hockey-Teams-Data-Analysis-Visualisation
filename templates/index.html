@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyse des équipes de hockey</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body class="bg-gray-800 text-white">
+    <div class="container mx-auto p-4">
+        <h1 class="text-2xl font-bold mb-4">Analyse des équipes de hockey</h1>
+        
+        <h2 class="text-lg mb-2"><b>Recherche d'équipe</b></h2>
+        <form id="search-form" class="mb-4">
+            <input type="text" id="team_name" name="team_name" class="p-2 border border-gray-600 rounded bg-gray-700" placeholder="Nom de l'équipe" autocomplete="off">
+            <button type="button" id="search-button" class="mt-2 p-2 bg-blue-500 hover:bg-blue-700 rounded">Rechercher</button>
+        </form>
+
+        <h2 class="text-lg mb-2"><b>Statistiques</b></h2>
+        <button id="stats-button" class="mt-2 p-2 bg-green-500 hover:bg-green-700 rounded">Afficher Statistiques</button>
+        <div id="stats-result" class="mt-4"></div>
+
+        <h2 class="text-lg mb-2"><b>Corrélations</b></h2>
+        <button id="correlation-button" class="mt-2 p-2 bg-purple-500 hover:bg-purple-700 rounded">Afficher Corrélations</button>
+        <div id="correlation-result" class="mt-4"></div>
+        
+        <h2 class="text-lg mb-2"><b>Données des équipes</b></h2>
+        <table class="min-w-full border-collapse border border-gray-600" id="teams-table">
+            <thead>
+                <tr>
+                    <th class="border border-gray-600 p-2">Nom de l'équipe</th>
+                    <th class="border border-gray-600 p-2">Année</th>
+                    <th class="border border-gray-600 p-2">Victoires</th>
+                    <th class="border border-gray-600 p-2">Défaites</th>
+                    <th class="border border-gray-600 p-2">OT Défaites</th>
+                    <th class="border border-gray-600 p-2">Pourcentage de victoires</th>
+                    <th class="border border-gray-600 p-2">Buts pour (GF)</th>
+                    <th class="border border-gray-600 p-2">Buts contre (GA)</th>
+                    <th class="border border-gray-600 p-2">+ / -</th>
+                    <th class="border border-gray-600 p-2">ID</th>
+                    <th class="border border-gray-600 p-2">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in data %}
+                    <tr class="team-row" data-team="{{ row['Team Name'] }}">
+                        <td class="border border-gray-600 p-2">{{ row['Team Name'] }}</td>
+                        <td class="border border-gray-600 p-2">{{ row['Year'] }}</td>
+                        <td class="border border-gray-600 p-2">{{ row['Wins'] }}</td>
+                        <td class="border border-gray-600 p-2">{{ row['Losses'] }}</td>
+                        <td class="border border-gray-600 p-2">{{ row['OT Losses'] }}</td>
+                        <td class="border border-gray-600 p-2">{{ row['Win %'] }}</td>
+                        <td class="border border-gray-600 p-2">{{ row['Goals For (GF)'] }}</td>
+                        <td class="border border-gray-600 p-2">{{ row['Goals Against (GA)'] }}</td>
+                        <td class="border border-gray-600 p-2">{{ row['+ / -'] }}</td>
+                        <td class="border border-gray-600 p-2">{{ row['ID'] }}</td>
+                        <td class="border border-gray-600 p-2">
+                            <button class="analyze-button p-1 bg-indigo-500 hover:bg-indigo-700 rounded">Analyser</button>
+                            
+                            <button class="visualize-button p-1 bg-indigo-500 hover:bg-indigo-700 rounded">Visualiser</button>
+                            <button class="download-button p-1 bg-yellow-500 hover:bg-yellow-700 rounded">Télécharger</button>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Modal for Team Analysis -->
+        <div id="teamModal" class="fixed inset-0 bg-gray-800 bg-opacity-75 hidden justify-center items-center">
+            <div class="bg-gray-900 p-6 rounded-lg">
+                <h2 class="text-xl font-bold mb-4" id="modal-title"></h2>
+                <div id="modal-content"></div>
+                <button id="close-modal" class="mt-4 p-2 bg-red-500 hover:bg-red-700 rounded">Fermer</button>
+            </div>
+        </div>
+
+        <!-- Modal for Error and Success Messages -->
+        <div id="messageModal" class="fixed inset-0 bg-gray-800 bg-opacity-75 hidden justify-center items-center">
+            <div class="bg-gray-900 p-6 rounded-lg">
+                <h2 class="text-xl font-bold mb-4" id="message-title"></h2>
+                <div id="message-content"></div>
+                <button id="close-message-modal" class="mt-4 p-2 bg-red-500 hover:bg-red-700 rounded">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // Handle team row click
+            $('.team-row').on('click', function() {
+                const teamName = $(this).data('team');
+                fetchTeamAnalytics(teamName);
+            });
+
+            // Fetch analytics for the selected team
+            function fetchTeamAnalytics(teamName) {
+                $.get(`/best_year/${teamName}`, function(bestYear) {
+                    $('#modal-title').text(`Analyse pour ${teamName}`);
+                    $('#modal-content').html(`
+                        <h3>Meilleure année de performance:</h3>
+                        <p>Année: ${bestYear.Year}, Pourcentage de victoires: ${bestYear['Win %']}</p>
+                        <h3>Évolution des performances:</h3>
+                    `);
+                    
+                    $.get(`/team_performance/${teamName}`, function(performanceData) {
+                        let performanceHtml = '<ul>';
+                        performanceData.forEach(row => {
+                            performanceHtml += `<li>${row.Year}: Victoires - ${row.Wins}, Défaites - ${row.Losses}</li>`;
+                        });
+                        performanceHtml += '</ul>';
+                        $('#modal-content').append(performanceHtml);
+                    });
+
+                    // Show the modal
+                    $('#teamModal').removeClass('hidden');
+                }).fail(function() {
+                    showMessageModal('Erreur', `Impossible de récupérer les données pour ${teamName}.`);
+                });
+            }
+
+            // Show error/success message modal
+            function showMessageModal(title, message) {
+                $('#message-title').text(title);
+                $('#message-content').text(message);
+                $('#messageModal').removeClass('hidden');
+            }
+
+            // Close modals
+            $('#close-modal').on('click', function() {
+                $('#teamModal').addClass('hidden');
+            });
+
+            $('#close-message-modal').on('click', function() {
+                $('#messageModal').addClass('hidden');
+            });
+
+            $('#search-button').on('click', function() {
+                const teamName = $('#team_name').val();
+                $.get('/search', { q: teamName }, function(data) {
+                    const tbody = $('#teams-table tbody');
+                    tbody.empty(); // Vider la table avant d'ajouter de nouveaux résultats
+                    data.forEach(row => {
+                        tbody.append(`
+                            <tr class="team-row" data-team="${row['Team Name']}">
+                                <td class="border border-gray-600 p-2">${row['Team Name']}</td>
+                                <td class="border border-gray-600 p-2">${row['Year']}</td>
+                                <td class="border border-gray-600 p-2">${row['Wins']}</td>
+                                <td class="border border-gray-600 p-2">${row['Losses']}</td>
+                                <td class="border border-gray-600 p-2">${row['OT Losses']}</td>
+                                <td class="border border-gray-600 p-2">${row['Win %']}</td>
+                                <td class="border border-gray-600 p-2">${row['Goals For (GF)']}</td>
+                                <td class="border border-gray-600 p-2">${row['Goals Against (GA)']}</td>
+                                <td class="border border-gray-600 p-2">${row['+ / -']}</td>
+                                <td class="border border-gray-600 p-2">${row['ID']}</td>
+                                <td class="border border-gray-600 p-2">
+                                    <button class="visualize-button p-1 bg-indigo-500 hover:bg-indigo-700 rounded">Visualiser</button>
+                                    <button class="download-button p-1 bg-yellow-500 hover:bg-yellow-700 rounded">Télécharger</button>
+                                </td>
+                            </tr>
+                        `);
+                    });
+                }).fail(function() {
+                    showMessageModal('Erreur', 'Aucune équipe trouvée.');
+                });
+            });
+
+            $('#stats-button').on('click', function() {
+                $.get('/statistics', function(stats) {
+                    $('#stats-result').html(`
+                        <p>Moyenne des victoires : ${stats.mean_wins.toFixed(2)}</p>
+                        <p>Médiane des victoires : ${stats.median_wins}</p>
+                        <p>Mode des victoires : ${stats.mode_wins}</p>
+                        <p>Écart-type des victoires : ${stats.std_wins.toFixed(2)}</p>
+                        <p>Corrélation (Victoires vs. Buts marqués) : ${stats.correlation_GF_Wins.toFixed(2)}</p>
+                        <p>Corrélation (Pourcentage de victoires vs. Buts encaissés) : ${stats.correlation_Win_Percentage_GA.toFixed(2)}</p>
+                    `);
+                }).fail(function() {
+                    showMessageModal('Erreur', 'Impossible de récupérer les statistiques.');
+                });
+            });
+
+            $('#correlation-button').on('click', function() {
+                $.get('/correlation', function(correlation) {
+                    $('#correlation-result').html(`
+                        <p>Corrélation (Victoires vs. Buts marqués) : ${correlation.win_goals.toFixed(2)}</p>
+                        <p>Corrélation (Pourcentage de victoires vs. Buts encaissés) : ${correlation.win_percentage_goals_against.toFixed(2)}</p>
+                    `);
+                }).fail(function() {
+                    showMessageModal('Erreur', 'Impossible de récupérer les corrélations.');
+                });
+            });
+
+            // Visualize and Download actions
+            $(document).on('click', '.visualize-button', function() {
+                const teamName = $(this).closest('.team-row').data('team');
+                window.location.href = `/visualizations/${teamName}`;
+            });
+
+            $(document).on('click', '.download-button', function() {
+                const teamName = $(this).closest('.team-row').data('team');
+                window.location.href = `/download_results/${teamName}_performance.csv`;
+            });
+        });
+    </script>
+</body>
+</html>

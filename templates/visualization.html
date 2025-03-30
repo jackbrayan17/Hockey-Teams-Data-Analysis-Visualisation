@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualisations des Équipes de Hockey</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body class="bg-gray-800 text-white">
+    <div class="container mx-auto p-4">
+        <h1 class="text-2xl font-bold mb-4">Visualisations pour l'équipe : <span id="team-name"></span></h1>
+        
+        <div id="visualizations-result" class="mt-4">
+            <h3 class="text-lg mb-2">Évolution des Victoires :</h3>
+            <img id="victories-evolution" src="" alt="Évolution des victoires" class="mb-4 hidden">
+
+            <h3 class="text-lg mb-2">Histogramme des Buts Marqués :</h3>
+            <img id="goals-per-year" src="" alt="Histogramme des buts marqués" class="mb-4 hidden">
+
+            <h3 class="text-lg mb-2">Boxplot des Victoires par Équipe :</h3>
+            <img id="victories-boxplot" src="" alt="Boxplot des victoires" class="mb-4 hidden">
+
+            <h3 class="text-lg mb-2">Heatmap des Performances Moyennes par Année :</h3>
+            <img id="performance-heatmap" src="" alt="Heatmap des performances" class="mb-4 hidden">
+
+            <h3 class="text-lg mb-2">Scatter Plot : Buts Marqués vs Pourcentage de Victoires :</h3>
+            <img id="goals-vs-wins-scatter" src="" alt="Scatter plot" class="mb-4 hidden">
+
+            <h3 class="text-lg mb-2">Distribution des Performances pour l'Année :</h3>
+            <img id="performance-distribution" src="" alt="Distribution des performances" class="mb-4 hidden">
+        </div>
+
+        <a href="/" class="mt-4 p-2 bg-indigo-500 hover:bg-indigo-700 rounded">Retour à l'analyse</a>
+    </div>
+
+    <script>
+    $(document).ready(function() {
+    // Get the team name from the URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const teamName = urlParams.get('team_name');
+
+    // Set the team name in the title
+    $('#team-name').text(teamName);
+
+    // Fetch the visualizations for the selected team
+    $.get(`/visualizations/${teamName}`, function(visualizationData) {
+        // Check if the response contains the expected data
+        if (visualizationData && typeof visualizationData === 'object') {
+            $('#victories-evolution').attr('src', visualizationData.victories_evolution).removeClass('hidden');
+            $('#goals-per-year').attr('src', visualizationData.goals_per_year).removeClass('hidden');
+            $('#victories-boxplot').attr('src', visualizationData.victories_boxplot).removeClass('hidden');
+            $('#performance-heatmap').attr('src', visualizationData.performance_heatmap).removeClass('hidden');
+            $('#goals-vs-wins-scatter').attr('src', visualizationData.goals_vs_wins_scatter).removeClass('hidden');
+            $('#performance-distribution').attr('src', visualizationData.performance_distribution).removeClass('hidden');
+        } else {
+            alert('Erreur lors du chargement des visualisations pour l\'équipe ' + teamName + '.');
+        }
+    }).fail(function() {
+        alert('Erreur lors du chargement des visualisations pour l\'équipe ' + teamName + '.');
+    });
+});
+</script>
+</body>
+</html>
