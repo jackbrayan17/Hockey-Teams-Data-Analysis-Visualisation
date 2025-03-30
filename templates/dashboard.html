@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Hockey Team Analysis</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-800 text-white">
+    <div class="container mx-auto p-4">
+        <h1 class="text-2xl font-bold mb-4">Dashboard des Équipes de Hockey</h1>
+        <a href="/" class="mt-4 p-2 bg-indigo-500 hover:bg-indigo-700 rounded"><- Retour</a>
+        
+
+        <p class="mb-4">Visualisations des statistiques des équipes de hockey.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+            <!-- Card for Average Wins -->
+            <div class="bg-gray-900 p-4 rounded-lg">
+                <h2 class="text-lg font-bold mb-2">Moyenne des Victoires</h2>
+                <canvas id="avgWinsChart"></canvas>
+            </div>
+
+            <!-- Card for Total Goals -->
+            <div class="bg-gray-900 p-4 rounded-lg">
+                <h2 class="text-lg font-bold mb-2">Total des Buts Marqués</h2>
+                <canvas id="totalGoalsChart"></canvas>
+            </div>
+
+            <!-- Card for Win Percentage -->
+            <div class="bg-gray-900 p-4 rounded-lg">
+                <h2 class="text-lg font-bold mb-2">Pourcentage de Victoires</h2>
+                <canvas id="winPercentageChart"></canvas>
+            </div>
+
+            <!-- Card for Total Losses -->
+            <div class="bg-gray-900 p-4 rounded-lg">
+                <h2 class="text-lg font-bold mb-2">Total des Défaites</h2>
+                <canvas id="totalLossesChart"></canvas>
+            </div>
+
+            <!-- Card for Total OT Losses
+            <div class="bg-gray-900 p-4 rounded-lg">
+                <h2 class="text-lg font-bold mb-2">Total des Défaites en OT</h2>
+                <canvas id="totalOTLossesChart"></canvas>
+            </div> -->
+
+            <!-- Card for Average Goals For -->
+            <div class="bg-gray-900 p-4 rounded-lg">
+                <h2 class="text-lg font-bold mb-2">Buts Moyens Marqués</h2>
+                <canvas id="avgGoalsForChart"></canvas>
+            </div>
+
+            <!-- Card for Average Goals Against -->
+            <div class="bg-gray-900 p-4 rounded-lg">
+                <h2 class="text-lg font-bold mb-2">Buts Moyens Encaissés</h2>
+                <canvas id="avgGoalsAgainstChart"></canvas>
+            </div>
+
+            <!-- Card for Total Games Played -->
+            <div class="bg-gray-900 p-4 rounded-lg">
+                <h2 class="text-lg font-bold mb-2">Total des Matchs Joués</h2>
+                <canvas id="totalGamesChart"></canvas>
+            </div>
+
+            <!-- Card for Average Plus/Minus -->
+            <div class="bg-gray-900 p-4 rounded-lg">
+                <h2 class="text-lg font-bold mb-2">Plus/Minus Moyen</h2>
+                <canvas id="avgPlusMinusChart"></canvas>
+            </div>
+
+            <!-- Card for Max Wins -->
+            <div class="bg-gray-900 p-4 rounded-lg">
+                <h2 class="text-lg font-bold mb-2">Max des Victoires</h2>
+                <canvas id="maxWinsChart"></canvas>
+            </div>
+
+            <!-- Card for Min Wins -->
+            <div class="bg-gray-900 p-4 rounded-lg">
+                <h2 class="text-lg font-bold mb-2">Min des Victoires</h2>
+                <canvas id="minWinsChart"></canvas>
+            </div>
+
+            <!-- Card for Total Points -->
+            <div class="bg-gray-900 p-4 rounded-lg">
+                <h2 class="text-lg font-bold mb-2">Total des Points</h2>
+                <canvas id="totalPointsChart"></canvas>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        // Fetch data from the Flask API
+        fetch('/api/dashboard_data')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erreur réseau : ' + response.statusText);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log(data); // Log the received data for debugging
+
+                // Extract labels from the data
+                const labels = Object.keys(data.average_wins);
+
+                // Chart for Average Wins
+                const ctxAvgWins = document.getElementById('avgWinsChart').getContext('2d');
+                new Chart(ctxAvgWins, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Moyenne des Victoires',
+                            data: Object.values(data.average_wins),
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+
+                // Chart for Total Goals
+                const ctxTotalGoals = document.getElementById('totalGoalsChart').getContext('2d');
+                new Chart(ctxTotalGoals, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Total des Buts',
+                            data: Object.values(data.total_goals),
+                            fill: false,
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+
+                // Chart for Win Percentage
+                const ctxWinPercentage = document.getElementById('winPercentageChart').getContext('2d');
+                new Chart(ctxWinPercentage, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Pourcentage de Victoires',
+                            data: Object.values(data.win_percentage),
+                            backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                            borderColor: 'rgba(153, 102, 255, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+
+                // Chart for Total Losses
+                const ctxTotalLosses = document.getElementById('totalLossesChart').getContext('2d');
+                new Chart(ctxTotalLosses, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Total des Défaites',
+                            data: Object.values(data.total_losses),
+                            backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                            borderColor: 'rgba(255, 159, 64, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+
+                // Chart for Total OT Losses
+                const ctxTotalOTLosses = document.getElementById('totalOTLossesChart').getContext('2d');
+                new Chart(ctxTotalOTLosses, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Total des Défaites en OT',
+                            data: Object.values(data.total_ot_losses),
+                            backgroundColor: 'rgba(255, 206, 86, 0.2)',
+                            borderColor: 'rgba(255, 206, 86, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+
+                // Chart for Average Goals For
+                const ctxAvgGoalsFor = document.getElementById('avgGoalsForChart').getContext('2d');
+                new Chart(ctxAvgGoalsFor, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Buts Moyens Marqués',
+                            data: Object.values(data.average_goals_for),
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+
+                // Chart for Average Goals Against
+                const ctxAvgGoalsAgainst = document.getElementById('avgGoalsAgainstChart').getContext('2d');
+                new Chart(ctxAvgGoalsAgainst, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Buts Moyens Encaissés',
+                            data: Object.values(data.average_goals_against),
+                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+
+                // Chart for Total Games Played
+                const ctxTotalGames = document.getElementById('totalGamesChart').getContext('2d');
+                new Chart(ctxTotalGames, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Total des Matchs Joués',
+                            data: Object.values(data.total_games_played),
+                            backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                            borderColor: 'rgba(153, 102, 255, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+
+                // Chart for Average Plus/Minus
+                const ctxAvgPlusMinus = document.getElementById('avgPlusMinusChart').getContext('2d');
+                new Chart(ctxAvgPlusMinus, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Plus/Minus Moyen',
+                            data: Object.values(data.average_plus_minus),
+                            backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                            borderColor: 'rgba(255, 159, 64, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+
+                // Chart for Max Wins
+                const ctxMaxWins = document.getElementById('maxWinsChart').getContext('2d');
+                new Chart(ctxMaxWins, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Max des Victoires',
+                            data: Object.values(data.max_wins),
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+
+                // Chart for Min Wins
+                const ctxMinWins = document.getElementById('minWinsChart').getContext('2d');
+                new Chart(ctxMinWins, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Min des Victoires',
+                            data: Object.values(data.min_wins),
+                            backgroundColor: 'rgba(255, 206, 86, 0.2)',
+                            borderColor: 'rgba(255, 206, 86, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+
+                // Chart for Total Points
+                const ctxTotalPoints = document.getElementById('totalPointsChart').getContext('2d');
+                new Chart(ctxTotalPoints, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Total des Points',
+                            data: Object.values(data.total_points),
+                            backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                            borderColor: 'rgba(153, 102, 255, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+
+            })
+            .catch(error => {
+                console.error('Erreur lors du chargement des données:', error);
+            });
+    </script>
+</body>
+</html>
